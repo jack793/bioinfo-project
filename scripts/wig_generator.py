@@ -1,4 +1,4 @@
-from script import pybam
+from scripts import pybam
 
 # bam --------------------- All the bytes that make up the current alignment ("read"),
 #                                   still in binary just as it was in the BAM file. Useful
