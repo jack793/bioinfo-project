@@ -1,5 +1,4 @@
-
-import pybam
+from script import pybam
 
 # bam --------------------- All the bytes that make up the current alignment ("read"),
 #                                   still in binary just as it was in the BAM file. Useful
@@ -82,9 +81,9 @@ import pybam
 #       sam_tlen ---------------- [9th column in SAM] The TLEN value.
 
 
-for row in pybam.read('data/lact_sorted.bam'):
+for alignment in pybam.read('data/lact_sorted.bam'):
         # get flag,
-        print(row.sam_flag, row.sam_pos1, row.sam_tlen)
+        print(alignment.sam_flag, alignment.sam_pos1, alignment.sam_tlen)
 
 
 # tupla: (quante pairs son presenti, lunghezza media della somma dei pairs )
