@@ -81,8 +81,8 @@ from scripts import pybam
 #       sam_tlen ---------------- [9th column in SAM] The TLEN value.
 
 
-for alignment in pybam.read('data/lact_sorted.bam'):
-        # get flag,
+for alignment in pybam.read('../data/lact_sorted.bam'):
+        # get flag, 1-based position of the alignment and signed observed Template LENgth.
         print(alignment.sam_flag, alignment.sam_pos1, alignment.sam_tlen)
 
 
