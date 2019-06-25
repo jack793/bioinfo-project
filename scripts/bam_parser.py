@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import sys, math, statistics
+import math
+import statistics
+import sys
 
 from scripts import pybam
-import pysam
 
 
 # bam --------------------- All the bytes that make up the current alignment ("read"),
@@ -87,15 +88,18 @@ import pysam
 #       sam_tlen ---------------- [9th column in SAM] The TLEN value.
 
 
+################ FUNCTIONS #################
+
+
 def phy_coverage_wig(inp_f):
-	f = open('../outputs/phy_coverage.wig', 'w')
+	f = open('../wig-tracks/phy_coverage.wig', 'w')
 
 	# initialize genome_change variable as a list constituted by 0 with length = genomelength
 	genome_length = 3079196
 	genome_change = [0] * genome_length
 
 	for alignment in inp_f:
-		# convertion of flag from integer to binary
+		# conversion of flag from integer to binary
 		flag = bin(alignment.sam_flag)
 
 		# get start position and tlen value
@@ -126,6 +130,41 @@ def phy_coverage_wig(inp_f):
 	f.close()
 
 
+def sequence_coverage(inp_f):
+	print("Sequence Coverage started...")
+	f = open('../wig-tracks/seq_coverage.wig', 'w')
+
+	# initialize genome_change variable as a list constituted by 0 with length = genomelength
+	genome_length = 3079196
+	genome_change = [0] * genome_length
+
+	for alignment in inp_f:
+		# conversion of flag from integer to binary
+
+		# get start position and tlen value
+		starting_mate_position = alignment.sam_pos1  # 4th column
+		read_lenght = 100  # 9th column
+
+		if alignment.sam_flag & 4 == 0:  # take all mapped reads
+			genome_change[starting_mate_position] += 1
+
+			# decrement end position by one
+			genome_change[starting_mate_position + read_lenght] -= 1
+
+	# print genomic profile as a wiggle file
+	print("Generating .wig file")
+	f.write("fixedStep chrom=genome start=1 step=1 span=1 \n")
+
+	current_coverage = 0
+
+	# cicle over all positions of the genome
+	for position in range(genome_length):
+		current_coverage += genome_change[position]
+		f.write(str(current_coverage) + '\n')
+
+	f.close()
+
+
 def get_genome_stats(inp_f):
 	# init vars
 	count_values = 0
@@ -139,7 +178,7 @@ def get_genome_stats(inp_f):
 		# get tlen value
 		template_length = alignment.sam_tlen  # 9th column
 
-		if 0 < template_length <= 3000:
+		if 0 < template_length <= 3000:  # manual filter discarding OUTLIERS
 
 			count_values += 1
 			if template_length > max_tlen:
@@ -169,12 +208,10 @@ def phy_insert_wig(inp_f):
 				if cigarType == 1:
 					cont += 1
 					tot += read.template_length
-					print("{}:{}-{} -> {}".format(read.reference_name, read.reference_start, read.reference_end,
-												  read.template_length))
+					print("{}:{}-{}".format(read.reference_name, read.reference_start, read.reference_end))
 
 
-# print("TOT: " + str(cont))
-# print("MEAN: " + str(tot/cont))
+############### DEBUG FUNCTION #################
 
 
 def debug(inp_f):
@@ -182,19 +219,22 @@ def debug(inp_f):
 		print(row.sam_seq)
 
 
+#################### MAIN ######################
+
+
 if __name__ == '__main__':
 	# load input file (using pybam library):
 	# 	refer to a BAM file sorted by genomic position!
 	bam_file = pybam.read('../data/lact_sorted.bam')
 
-	# 10) Calculate physical coverage creating a related wig file
+	# 9) Calculate PHYSICAL COVERAGE creating a related wig file
 	# phy_coverage_wig(bam_file)
 
-	# 11)
-	# genomic_insert_stats(bam_file)
+	# 10) Calculate SEQUENCE COVERAGE creating a related wig file
+	sequence_coverage(bam_file)
 
-	# 12)
-	get_genome_stats(bam_file)
+# 11)
+# get_genome_stats(bam_file)
 
 # 	# load input file (using pysam library):
 # samtobam = pysam.Samfile('../data/lact_sorted.bam', "rb")
