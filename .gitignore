@@ -11,7 +11,7 @@
 data/
 
 # User-specific project folder
-.idea/
+.idea/*
 
 # User-specific stuff
 .idea/**/workspace.xml
