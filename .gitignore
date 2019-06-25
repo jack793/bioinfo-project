@@ -10,6 +10,9 @@
 # Huge Dataset stuff
 data/
 
+# User-specific project folder
+.idea/
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
