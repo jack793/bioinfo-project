@@ -331,7 +331,10 @@ def debug(bam_f):
 
 
 if __name__ == '__main__':
-	# load input file (using pybam library):
+
+	########################## PART 2 ###########################
+
+	# load sorted Lactobacillus bam file (using pybam library):
 	# 	refer to a BAM file sorted by genomic position!
 	sorted_bam = pybam.read('../data/lact_sorted.bam')
 
@@ -341,13 +344,21 @@ if __name__ == '__main__':
 	# 10) Calculate SEQUENCE COVERAGE, creating related wig file
 	# sequence_coverage_wig(bam_file)
 
-	# 11) Calculate AVERAGE INSERTS LENGTH, creating related wig file
-	# avg_inserts_wig(bam_file)
-
-	# 12) Calculate insert STATS
+	# 11) Calculate insert STATS
 	# get_insert_stats(bam_file)
 
-	unique_bam = pybam.read('../data/unique.bam')
+	# 12) Calculate AVERAGE INSERTS LENGTH, creating related wig file
+	# avg_inserts_wig(bam_file)
+
+	# 13) Calculate exceeding STD DEVIATION PERCENTAGE , creating related wig file
+	# distribution_wig(sorted_bam)
+
+	########################## PART 3 ###########################
+
+	# load Uniquely Mapped reads bam file (filtered from original lact_sorted.bam using samtools)
+	unique_bam = pybam.read('../data/unique.reads.bam')
+
+	# 14) Calculate UNIQUE READS COVERAGE, creating related wig file
 	unique_reads_coverage(unique_bam)
 
 	# debug(bam_file)
