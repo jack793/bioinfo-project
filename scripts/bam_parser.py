@@ -5,6 +5,7 @@ import statistics
 import sys
 
 from scripts import pybam
+# https://github.com/luidale/pybam [Currently only Dynamic Parsing works]
 
 
 # bam --------------------- All the bytes that make up the current alignment ("read"),
@@ -356,9 +357,16 @@ if __name__ == '__main__':
 	########################## PART 3 ###########################
 
 	# load Uniquely Mapped reads bam file (filtered from original lact_sorted.bam using samtools)
+	#
+	# from :
+	# https://wabi-wiki.scilifelab.se/display/KB/Filter+uniquely+mapped+reads+from+a+BAM+file#FilteruniquelymappedreadsfromaBAMfile-BWA
+	# 	samtools view -h -q 1 -F 4 -F 256 DATA/lact_sorted.bam | grep -v XA:Z | grep -v SA:Z |
+	# 		samtools view -b - > DATA/unique.bam
 	unique_bam = pybam.read('../data/unique.reads.bam')
 
 	# 14) Calculate UNIQUE READS COVERAGE, creating related wig file
 	unique_reads_coverage(unique_bam)
+
+	################# Debug zone ####################
 
 	# debug(bam_file)
