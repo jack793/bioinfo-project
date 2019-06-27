@@ -317,7 +317,7 @@ def avg_inserts_wig(bam_f):
 def unique_reads_coverage(bam_f):
 	print("Uniquely Mapped Reads Physical Coverage started...\n")
 
-	f = open('../wig-tracks/unique_reads_coverage.wig', 'w')
+	f = open('../wig-tracks/unique_coverage(temp).wig', 'w')
 
 	# initialize genome_change variable as a list constituted by 0 with length = genomelength
 	genome_length = 3079196
@@ -344,7 +344,6 @@ def unique_reads_coverage(bam_f):
 
 	print("Generating .wig file\n")
 	# print genomic profile as a wiggle file
-	f.write("fixedStep chrom=genome start=1 step=1 span=1 \n")
 
 	current_coverage = 0
 
@@ -354,6 +353,13 @@ def unique_reads_coverage(bam_f):
 		f.write(str(current_coverage) + '\n')
 
 	f.close()
+
+	print("Calculate percentage coverage of unique mapped reads...")
+	percent_math("phy_coverage.wig", "unique_coverage(temp).wig", "unique_pairs_%coverage.wig")
+
+	print("Removing temp .wig file")
+	os.remove("../wig-tracks/unique_coverage(temp).wig")
+
 	print("done!")
 
 
@@ -438,16 +444,9 @@ def oriented_mates_wig(bam_f):
 ############### DEBUG FUNCTIONS #################
 
 
-def debug(bam_f):
-	for row in bam_f:
-		flag = bin(int(row.sam_flag))
-		print(flag)
-		print(flag[-3])
-
-
 def percent_math(inp1: str, inp2: str, out: str):
 	with open('../wig-tracks/' + inp1, "r") as f1, open('../wig-tracks/' + inp2, "r") as f2, \
-			open('../wig-tracks/' + out, "w") as out:
+		open('../wig-tracks/' + out, "w") as out:
 
 		v1 = []
 		v2 = []
@@ -477,6 +476,15 @@ def percent_math(inp1: str, inp2: str, out: str):
 				out.write(str(100 * v2[x] / v1[x]) + "\n")
 
 
+def debug(bam_f):
+	print("debugging...\n")
+	cont = 0
+	for row in bam_f:
+		lenght = row.sam_tlen
+		flag = bin(int(row.sam_flag))
+		print(flag, lenght, cont)
+
+
 #################### MAIN ######################
 
 
@@ -503,7 +511,7 @@ if __name__ == '__main__':
 	avg = 2101.0225496051385
 	std = 201.66577043621606
 	# 13) Calculate exceeding STD DEVIATION PERCENTAGE , creating related wig file
-	distribution_wig(sorted_bam, avg, std)
+	# distribution_wig(sorted_bam, avg, std)
 
 	########################## PART 3 ###########################
 
@@ -513,12 +521,15 @@ if __name__ == '__main__':
 	# https://wabi-wiki.scilifelab.se/display/KB/Filter+uniquely+mapped+reads+from+a+BAM+file#FilteruniquelymappedreadsfromaBAMfile-BWA
 	# 	samtools view -h -q 1 -F 4 -F 256 DATA/lact_sorted.bam | grep -v XA:Z | grep -v SA:Z |
 	# 		samtools view -b - > DATA/unique.bam
-	# unique_bam = pybam.read('../data/unique.reads.bam')
+	unique_bam = pybam.read('../data/unique.reads.bam')
 
 	# 14) Calculate UNIQUE READS COVERAGE, creating related wig file
-	# unique_reads_coverage(unique_bam)
+	unique_reads_coverage(unique_bam)
 
-	oriented_mates_wig(sorted_bam)
+	# 15)
+
+	# 16) Calculate ORIENTED MATES percentage, creating related wig file
+	# oriented_mates_wig(sorted_bam)
 
 	################# Debug zone ####################
 
