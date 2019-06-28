@@ -717,23 +717,24 @@ if __name__ == '__main__':
 	def main_menu():
 		os.system('clear')
 
-		print("Welcome,\n")
-		print("Please choose the functionality you want to start:\n")
+		print("\n# BIOINFORMATICS PROJECT (2018/2019) by Giacomo Zecchin #\n")
+		print("Welcome to the BAM parser tool,")
+		print("please choose the functionality you want to start:\n")
 
-		print("######## PART II #########")
+		print("------ PART II ------")
 		print("[1] Physical coverage")
 		print("[2] Sequence coverage")
 		print("[3] Genome Inserts stats")
 		print("[4] Average inserts length coverage")
 		print("[5] Inserts length percentage(%) exceeding ST Deviation\n")
 
-		print("####### PART III ########")
+		print("------ PART III ------")
 		print("[6] Unique reads coverage")
 		print("[7] Multiple reads coverage")
 		print("[8] Oriented mates percentage(%)")
 		print("[9] Single mates percentage(%)\n")
 
-		print("[0]. Quit")
+		print("[0]. Quit this")
 
 		choice = input(">>  ")  # Ask for a string in std input
 		run_menu(choice)  # Execute user choice
@@ -787,4 +788,4 @@ if __name__ == '__main__':
 	#      MAIN PROGRAM
 	# =======================
 
-	main_menu()
+	main_menu()  # <-- Launch Main Tool program
