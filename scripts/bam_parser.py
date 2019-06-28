@@ -593,10 +593,11 @@ def single_mates_percentage(bam_f):
 	print("Generating 'single_mates_%coverage.wig' file")
 	get_percent_match("tot_phy_coverage.wig", "single_mates(temp).wig", "single_mates_%coverage.wig")
 
-	print("Removing temp 'single_mates(temp)' wig files...\n")
+	print("Removing temp 'single_mates(temp)' and 'tot_phy_coverage' wig files...\n")
 
 	os.remove("../wig-tracks/single_mates(temp).wig")
-	print("single_mates(temp).wig removed.\n")
+	os.remove("../wig-tracks/tot_phy_coverage.wig")
+	print("single_mates(temp).wig and tot_phy_coverage.wig removed.\n")
 
 	print("done!")
 
