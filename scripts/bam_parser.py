@@ -5,7 +5,7 @@ import statistics
 import sys
 import os
 
-from scripts import pybam
+import pybam
 
 
 # https://github.com/luidale/pybam [Currently only Dynamic Parsing works]
@@ -94,8 +94,45 @@ from scripts import pybam
 
 ################ FUNCTIONS #################
 
+def total_phy_coverage(bam_f):
+	print("Physical Coverage started...\n")
 
-def phy_coverage_wig(bam_f):
+	f = open('../wig-tracks/tot_phy_coverage.wig', 'w')
+
+	# initialize genome_change variable as a list constituted by 0 with length = genomelength
+	genome_length = 3079196
+	genome_change = [0] * genome_length
+
+	for alignment in bam_f:
+		# conversion of flag from integer to binary
+		flag = bin(alignment.sam_flag)
+
+		# get start position and tlen value
+		starting_mate_position = alignment.sam_pos1  # 4th column
+		template_length = alignment.sam_tlen  # 9th column
+
+		if flag.endswith('11'):
+			# increment start mate position by one
+			genome_change[starting_mate_position] += 1
+			# decrement end mate position by one
+			genome_change[starting_mate_position + template_length] -= 1
+
+	print("Generating .wig file\n")
+	# print genomic profile as a wiggle file
+	f.write("fixedStep chrom=genome start=1 step=1 span=1 \n")
+
+	current_coverage = 0
+
+	# cicle over all positions of the genome
+	for position in range(genome_length):
+		current_coverage += genome_change[position]
+		f.write(str(current_coverage) + '\n')
+
+	f.close()
+	print("done!")
+
+
+def phy_coverage(bam_f):
 	print("Physical Coverage started...\n")
 
 	f = open('../wig-tracks/phy_coverage.wig', 'w')
@@ -137,8 +174,11 @@ def phy_coverage_wig(bam_f):
 	f.close()
 	print("done!")
 
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
 
-def sequence_coverage_wig(bam_f):
+
+def sequence_coverage(bam_f):
 	print("Sequence Coverage started...\n")
 
 	f = open('../wig-tracks/seq_coverage.wig', 'w')
@@ -153,7 +193,7 @@ def sequence_coverage_wig(bam_f):
 		starting_mate_position = alignment.sam_pos1  # 4th column
 		read_lenght = 100  # 9th column
 
-		if alignment.sam_flag & 4 == 0:  # take all mapped reads
+		if alignment.sam_flag & 4 == 0:  # take all mapped reads: [3rd bit] in bam format == 0
 			genome_change[starting_mate_position] += 1
 
 			# decrement end position by one
@@ -172,6 +212,9 @@ def sequence_coverage_wig(bam_f):
 
 	f.close()
 	print("done!")
+
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
 
 
 def get_genome_stats(bam_f):
@@ -209,8 +252,11 @@ def get_genome_stats(bam_f):
 	print("\nTotal Reads:\t{0}\nMax Length:\t{1}\nMin Length:\t{2}\nAverage:\t{3}\nStd.error:\t{4}".format(
 		str(count_values), str(max_tlen), str(min_tlen), str(average), str(stdev / (math.sqrt(count_values)))))
 
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
 
-def distribution_wig(bam_f, average, stdev):
+
+def two_distribution_percentage(bam_f, average, stdev):
 	print("Standard Deviaton Distribution started...\n")
 
 	f = open('../wig-tracks/std_distribution(temp).wig', 'w')
@@ -251,17 +297,20 @@ def distribution_wig(bam_f, average, stdev):
 
 	f.close()
 
-	print("calculating percentage coverage distribution...\n")
-	percent_math("phy_coverage.wig", "std_distribution(temp).wig", "std_%distribution.wig")
+	print("calculating percentage coverage distribution in 'std_%distribution.wig'...\n")
+	get_percent_match("phy_coverage.wig", "std_distribution(temp).wig", "std_%distribution.wig")
 
-	print("Removing temp wig file..\n")
+	print("Removing 'std_distribution(temp)' wig file..\n")
 	os.remove("../wig-tracks/std_distribution(temp).wig")
 	print("	std_distribution(temp).wig removed.\n")
 
 	print("done!")
 
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
 
-def avg_inserts_wig(bam_f):
+
+def avg_inserts_coverage(bam_f):
 	print("Average genome inserts coverage started...\n")
 
 	f = open('../wig-tracks/avg_inserts_coverage.wig', 'w')
@@ -313,11 +362,14 @@ def avg_inserts_wig(bam_f):
 	f.close()
 	print("done!")
 
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
+
 
 def unique_reads_coverage(bam_f):
 	print("Uniquely Mapped Reads Physical Coverage started...\n")
 
-	f = open('../wig-tracks/unique_coverage(temp).wig', 'w')
+	f = open('../wig-tracks/unique_coverage.wig', 'w')
 
 	# initialize genome_change variable as a list constituted by 0 with length = genomelength
 	genome_length = 3079196
@@ -354,54 +406,112 @@ def unique_reads_coverage(bam_f):
 
 	f.close()
 
-	print("Calculate percentage coverage of unique mapped reads...")
-	percent_math("phy_coverage.wig", "unique_coverage(temp).wig", "unique_pairs_%coverage.wig")
-
-	print("Removing temp .wig file")
-	os.remove("../wig-tracks/unique_coverage(temp).wig")
-
 	print("done!")
 
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
 
-def oriented_mates_wig(bam_f):
-	print("Oriented mates percentage calculation started...\n")
 
-	f1 = open('../wig-tracks/out_oriented(temp).wig', 'w')
-	f2 = open('../wig-tracks/right_oriented(temp).wig', 'w')
-	f3 = open('../wig-tracks/left_oriented(temp).wig', 'w')
+def multiple_reads_coverage(bam_f):
+	print("Multiple Mapped Reads Coverage started...\n")
+
+	f = open('../wig-tracks/multiple_reads_coverage.wig', 'w')
 
 	# initialize genome_change variable as a list constituted by 0 with length = genomelength
 	genome_length = 3079196
-
-	genome_out = [0] * genome_length
-	genome_rdir = [0] * genome_length
-	genome_ldir = [0] * genome_length
+	genome_change = [0] * genome_length
 
 	for alignment in bam_f:
 		# conversion of flag from integer to binary
 		flag = bin(alignment.sam_flag)
-		nice_flag = flag[-6:]  # take 6th from last bit
+		multi_flag = flag[-9:]
 
 		# get start position and tlen value
 		starting_mate_position = alignment.sam_pos1  # 4th column
 		template_length = alignment.sam_tlen  # 9th column
 
-		if 0 < template_length <= 3000:
+		if template_length <= 3000 and multi_flag.startswith('1'):
 
-			if flag.endswith('1') and nice_flag.startswith('10') or nice_flag.startswith('01'):
-				## caso <- -> e -> <-
-				genome_out[starting_mate_position] += 1
-				genome_out[starting_mate_position + template_length] -= 1
+			# if (interesting_flag == '11') and (mate_length > 0)
+			# 	11 -> read paired and read paired in proper pair
+			if flag.endswith('11'):
+				# increment start position by one
+				genome_change[starting_mate_position] += 1
 
-			elif flag.endswith('1') and nice_flag.startswith('00'):
-				## caso -> ->
-				genome_rdir[starting_mate_position] += 1
-				genome_rdir[starting_mate_position + template_length] -= 1
+				# decrement end position by one
+				genome_change[starting_mate_position + template_length] -= 1
 
-			elif flag.endswith('1') and nice_flag.startswith('11'):
-				## caso <- <-
-				genome_ldir[starting_mate_position] += 1
-				genome_ldir[starting_mate_position + template_length] -= 1
+	print("Generating 'multiple_reads_coverage.wig' file\n")
+	# print genomic profile as a wiggle file
+
+	current_coverage = 0
+
+	# cicle over all positions of the genome
+	for position in range(genome_length):
+		current_coverage += genome_change[position]
+		f.write(str(current_coverage) + '\n')
+
+	f.close()
+	print("done!")
+
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
+
+
+def oriented_mates_percentage(bam_f):
+	print("Oriented mates percentage calculation started...\n")
+
+	f1 = open('../wig-tracks/out_oriented(temp).wig', 'w')
+	f2 = open('../wig-tracks/in_oriented(temp).wig', 'w')
+	f3 = open('../wig-tracks/wrong_oriented(temp).wig', 'w')
+
+	# initialize 3 variables as list constituted by 0 with length = genome_length
+	genome_length = 3079196
+
+	genome_out = [0] * genome_length
+	genome_in = [0] * genome_length
+	genome_wrong = [0] * genome_length
+
+	for alignment in bam_f:
+		# conversion of flag from integer to binary
+		flag = bin(alignment.sam_flag)[-6:]  # INTERESTED flag: take last 6 bits
+
+		# get start position and tlen value
+		start_pos = alignment.sam_pos1  # 4th column
+		tlen = alignment.sam_tlen  # 9th column
+
+		if tlen <= 3000 and flag.endswith('1'):  # filter + paired
+
+			## case: <-- <-- & --> --> as reads are WRONG MAPPED,
+			if flag.startswith('11') or flag.startswith('00'):
+				if tlen > 0:
+					genome_wrong[start_pos] += 1
+					genome_wrong[start_pos + tlen] -= 1
+				else:
+					genome_wrong[start_pos + tlen + 1] += 1
+					genome_wrong[start_pos + 1] -= 1
+
+
+			## case: <-- --> positive strand and positive length(10 & l>0),
+			elif flag.startswith('10') and tlen > 0:
+				genome_out[start_pos] += 1
+				genome_out[start_pos + tlen] -= 1
+
+			## case: <-- --> negative strand and negative length(01 & l<0),
+			elif flag.startswith('01') and tlen < 0:
+				genome_out[start_pos + tlen + 1] -= 1
+				genome_out[start_pos + 1] += 1
+
+
+			## case: --> <-- positive strand but negative length(10 & l<0)
+			elif flag.startswith('01') and tlen > 0:
+				genome_in[start_pos] += 1
+				genome_in[start_pos + tlen] -= 1
+
+			## case: --> <-- negative strand but positive length(01 & l>0)
+			elif flag.startswith('10') and tlen < 0:
+				genome_in[start_pos + tlen + 1] += 1
+				genome_in[start_pos + 1] -= 1
 
 	print("Generating 3 temp .wig file...please wait a moment\n")
 	# print genomic profile as a wiggle file
@@ -413,8 +523,8 @@ def oriented_mates_wig(bam_f):
 	# cicle over all positions of the genome
 	for position in range(genome_length):
 		current_coverage1 += genome_out[position]
-		current_coverage2 += genome_rdir[position]
-		current_coverage3 += genome_ldir[position]
+		current_coverage2 += genome_in[position]
+		current_coverage3 += genome_wrong[position]
 
 		f1.write(str(current_coverage1) + '\n')
 		f2.write(str(current_coverage2) + '\n')
@@ -425,27 +535,79 @@ def oriented_mates_wig(bam_f):
 	f3.close()
 	print("Calculation the percentage match for the three files..please wait\n")
 
-	percent_math("phy_coverage.wig", "out_oriented(temp).wig", "out_%oriented.wig")
-	percent_math("phy_coverage.wig", "right_oriented(temp).wig", "right_%oriented.wig")
-	percent_math("phy_coverage.wig", "left_oriented(temp).wig", "left_%oriented.wig")
+	get_percent_match("phy_coverage.wig", "out_oriented(temp).wig", "out_%oriented.wig")
+	get_percent_match("phy_coverage.wig", "in_oriented(temp).wig", "right_%oriented.wig")
+	get_percent_match("phy_coverage.wig", "wrong_oriented(temp).wig", "left_%oriented.wig")
 
 	print("Removing temp .wig files...\n")
 
 	os.remove("../wig-tracks/out_oriented(temp).wig")
 	print("out_oriented(temp).wig removed.")
-	os.remove("../wig-tracks/right_oriented(temp).wig")
-	print("right_oriented(temp).wig removed.")
-	os.remove("../wig-tracks/left_oriented(temp).wig")
-	print("left_oriented(temp).wig removed.\n")
+	os.remove("../wig-tracks/in_oriented(temp).wig")
+	print("in_oriented(temp).wig removed.")
+	os.remove("../wig-tracks/wrong_oriented(temp).wig")
+	print("wrong_oriented(temp).wig removed.\n")
 
 	print("done!")
+
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
+
+
+def single_mates_percentage(bam_f):
+	print("Single Mates percentage calculation started...\n")
+
+	f = open('../wig-tracks/single_mates(temp).wig', 'w')
+
+	# initialize genome_change variable as a list constituted by 0 with length = genomelength
+	genome_length = 3079196
+	genome_change = [0] * genome_length
+
+	for alignment in bam_f:
+		# conversion of flag from integer to binary
+		single_flag = bin(alignment.sam_flag)[-4:]  # 4th bit: 0x4 stand for SEGMENT UNMAPPED
+
+		# get start position and tlen value
+		start_pos = alignment.sam_pos1  # 4th column: start mate pos
+
+		if single_flag.startswith('01'):  # not mapped reads(1) but complementary is(0)
+			# Only start position increase, due to SAM specification that say:
+			# 	TLEN value is set as 0 for single-segment template...
+			genome_change[start_pos] += 1
+
+	print("Generating .wig file\n")
+	# print genomic profile as a wiggle file
+
+	current_coverage = 0
+
+	# cicle over all positions of the genome
+	for position in range(genome_length):
+		current_coverage += genome_change[position]
+		f.write(str(current_coverage) + '\n')
+
+	f.close()
+
+	print("Calculate total physical coverage and put it in a wig file...wait a moment..\n")
+	# total_phy_coverage(bam_f)
+
+	get_percent_match("tot_phy_coverage.wig", "single_mates(temp).wig", "single_mates_%coverage.wig")
+
+	print("Removing temp .wig files...\n")
+
+	os.remove("../wig-tracks/single_mates(temp).wig")
+	print("single_mates(temp).wig removed.\n")
+
+	print("done!")
+
+	input("\npress any key to return in the menu...\n")
+	return main_menu()  # <----- Recall Main tool view
 
 
 ############### DEBUG FUNCTIONS #################
 
 
-def percent_math(inp1: str, inp2: str, out: str):
-	with open('../wig-tracks/' + inp1, "r") as f1, open('../wig-tracks/' + inp2, "r") as f2, \
+def get_percent_match(inp: str, temp: str, out: str):
+	with open('../wig-tracks/' + inp, "r") as f1, open('../wig-tracks/' + temp, "r") as f2, \
 		open('../wig-tracks/' + out, "w") as out:
 
 		v1 = []
@@ -496,22 +658,24 @@ if __name__ == '__main__':
 	sorted_bam = pybam.read('../data/lact_sorted.bam')
 
 	# 9) Calculate PHYSICAL COVERAGE, creating related wig file
-	# phy_coverage_wig(sorted_bam)
+	# phy_coverage(sorted_bam)
 
 	# 10) Calculate SEQUENCE COVERAGE, creating related wig file
-	# sequence_coverage_wig(sorted_bam)
+	# sequence_coverage(sorted_bam)
 
-	# 11) Calculate insert STATS
+	# 11) Calculate INSERT STATS
 	# get_genome_stats(sorted_bam)
 
 	# 12) Calculate AVERAGE INSERTS LENGTH, creating related wig file
-	# avg_inserts_wig(sorted_bam)
+	# avg_inserts_coverage(sorted_bam)
 
 	# Saved values from get_genome_stats() function above
 	avg = 2101.0225496051385
 	std = 201.66577043621606
-	# 13) Calculate exceeding STD DEVIATION PERCENTAGE , creating related wig file
-	# distribution_wig(sorted_bam, avg, std)
+
+
+	# 13) Calculate exceeding STD DEVIATION PERCENTAGE, creating related wig file
+	# distribution_percentage(sorted_bam, avg, std)
 
 	########################## PART 3 ###########################
 
@@ -521,16 +685,104 @@ if __name__ == '__main__':
 	# https://wabi-wiki.scilifelab.se/display/KB/Filter+uniquely+mapped+reads+from+a+BAM+file#FilteruniquelymappedreadsfromaBAMfile-BWA
 	# 	samtools view -h -q 1 -F 4 -F 256 DATA/lact_sorted.bam | grep -v XA:Z | grep -v SA:Z |
 	# 		samtools view -b - > DATA/unique.bam
-	unique_bam = pybam.read('../data/unique.reads.bam')
+	# unique_bam = pybam.read('../data/unique.reads.bam')
 
 	# 14) Calculate UNIQUE READS COVERAGE, creating related wig file
-	unique_reads_coverage(unique_bam)
+	# unique_reads_coverage(unique_bam)
 
-	# 15)
+	# 15) Calculate MULTIPLE READS COVERAGE, creating related wig file
+	# multiple_reads_coverage(sorted_bam)
 
-	# 16) Calculate ORIENTED MATES percentage, creating related wig file
-	# oriented_mates_wig(sorted_bam)
+	# 16) Calculate ORIENTED MATES PERCENTAGE, creating related wig file
+	# oriented_mates_percentage(sorted_bam)
+
+	# 17) Calculate SINGLE MATES PERCENTEAGE, creating related wig file
+	# single_mates_percentage(sorted_bam)
 
 	################# Debug zone ####################
 
 	# debug(sorted_bam)
+
+	#################################################
+	#################  PARSER TOOL  #################
+	#################################################
+
+	# =======================
+	#     MENUS FUNCTIONS
+	# =======================
+
+	# Main menu
+	def main_menu():
+		os.system('clear')
+
+		print("Welcome,\n")
+		print("Please choose the functionality you want to start:\n")
+
+		print("######## PART II #########")
+		print("[1] Physical coverage")
+		print("[2] Sequence coverage")
+		print("[3] Genome Inserts stats")
+		print("[4] Average inserts length coverage")
+		print("[5] Inserts length percentage(%) exceeding ST Deviation\n")
+
+		print("####### PART III ########")
+		print("[6] Unique reads coverage")
+		print("[7] Multiple reads coverage")
+		print("[8] Oriented mates percentage(%)")
+		print("[9] Single mates percentage(%)\n")
+
+		print("[0]. Quit")
+
+		choice = input(">>  ")  # Ask for a string in std input
+		run_menu(choice)  # Execute user choice
+
+
+	# Execute menu
+	def run_menu(choice):
+		os.system('clear')  # Clear OS Terminal CLI
+		ch = choice.lower()
+		if ch == '':
+			print("Please, select a valid option")
+			choice = input(">> ")
+			run_menu(choice)
+		else:
+			if int(ch) == 5:
+				two_distribution_percentage(sorted_bam, avg, std)  # two_distr.. need 3 args
+			elif int(ch) == 0:
+				exit_program()
+			elif 0 < int(ch) < 10:  # VALID OPTION
+				menu_actions[int(ch)](sorted_bam)
+			else:  # NOT VALID OPTION
+				print("Invalid selection, please try again.\n")
+				main_menu()
+		return
+
+
+	# Exit program
+	def exit_program():
+		print("Exit from program..see you soon")
+		sys.exit()
+
+
+	# =======================
+	#    MENUS DEFINITIONS
+	# =======================
+
+	menu_actions = {
+		1: phy_coverage,
+		2: sequence_coverage,
+		3: get_genome_stats,
+		4: avg_inserts_coverage,
+		5: two_distribution_percentage,
+		6: unique_reads_coverage,
+		7: oriented_mates_percentage,
+		8: oriented_mates_percentage,
+		9: single_mates_percentage,
+		0: exit_program
+	}
+
+	# =======================
+	#      MAIN PROGRAM
+	# =======================
+
+	main_menu()
