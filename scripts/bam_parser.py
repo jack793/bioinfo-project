@@ -394,7 +394,7 @@ def unique_reads_coverage(bam_f):
 				# decrement end position by one
 				genome_change[starting_mate_position + template_length] -= 1
 
-	print("Generating .wig file\n")
+	print("Generating 'unique_coverage.wig' file\n")
 	# print genomic profile as a wiggle file
 
 	current_coverage = 0
@@ -536,8 +536,8 @@ def oriented_mates_percentage(bam_f):
 	print("Calculation the percentage match for the three files..please wait\n")
 
 	get_percent_match("phy_coverage.wig", "out_oriented(temp).wig", "out_%oriented.wig")
-	get_percent_match("phy_coverage.wig", "in_oriented(temp).wig", "right_%oriented.wig")
-	get_percent_match("phy_coverage.wig", "wrong_oriented(temp).wig", "left_%oriented.wig")
+	get_percent_match("phy_coverage.wig", "in_oriented(temp).wig", "in_%oriented.wig")
+	get_percent_match("phy_coverage.wig", "wrong_oriented(temp).wig", "wrong_%oriented.wig")
 
 	print("Removing temp .wig files...\n")
 
@@ -588,11 +588,12 @@ def single_mates_percentage(bam_f):
 	f.close()
 
 	print("Calculate total physical coverage and put it in a wig file...wait a moment..\n")
-	# total_phy_coverage(bam_f)
+	total_phy_coverage(bam_f)
 
+	print("Generating 'single_mates_%coverage.wig' file")
 	get_percent_match("tot_phy_coverage.wig", "single_mates(temp).wig", "single_mates_%coverage.wig")
 
-	print("Removing temp .wig files...\n")
+	print("Removing temp 'single_mates(temp)' wig files...\n")
 
 	os.remove("../wig-tracks/single_mates(temp).wig")
 	print("single_mates(temp).wig removed.\n")
@@ -775,7 +776,7 @@ if __name__ == '__main__':
 		4: avg_inserts_coverage,
 		5: two_distribution_percentage,
 		6: unique_reads_coverage,
-		7: oriented_mates_percentage,
+		7: multiple_reads_coverage,
 		8: oriented_mates_percentage,
 		9: single_mates_percentage,
 		0: exit_program
